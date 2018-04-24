@@ -46,7 +46,7 @@
             var path = Path.Combine(root, filename);
             if (passFactory != null)
             {
-                path += " password=" + passFactory();
+                path = $"filename={path}; password={passFactory()};";
             }
             this.db = new LiteRepository(new LiteDatabase(path, mapper));
 
