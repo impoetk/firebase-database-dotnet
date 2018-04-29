@@ -1,11 +1,22 @@
-﻿namespace Firebase.Database.Offline
+﻿using System;
+using System.Reflection;
+
+public class FullNameAttribute : Attribute
+{
+    public FullNameAttribute(string fullName)
+    {
+        FullName = fullName;
+    }
+
+    public string FullName { get; }
+}
+namespace Firebase.Database.Offline
 {
     using System;
     using System.Collections;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
-
     using LiteDB;
 
     /// <summary>
@@ -25,7 +36,7 @@
         /// <param name="locationFactory"> Custom function to put the database in a custom location. </param>
         public OfflineDatabase(Type itemType, string filenameModifier, Func<string> passFactory, Func<DirectoryInfo> locationFactory)
         {
-            var fullName = this.GetFileName(itemType.ToString());
+            var fullName = this.GetFileName(itemType.GetCustomAttribute<FullNameAttribute>()?.FullName ?? itemType.ToString());
             if(fullName.Length > 100)
             {
                 fullName = fullName.Substring(0, 100);
