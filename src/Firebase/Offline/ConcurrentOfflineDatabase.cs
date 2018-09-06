@@ -35,7 +35,7 @@
             BsonMapper mapper = BsonMapper.Global;
             mapper.Entity<OfflineEntry>().Id(o => o.Key);
 
-            string root = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string root = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
             if (locationFactory != null)
             {
                 var dir = locationFactory();
