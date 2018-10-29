@@ -59,7 +59,7 @@ namespace Firebase.Database
 
     public class FirebaseUserInfo
     {
-        public static async Task<FirebaseUserInfo> LoginAsync(string username, string password)
+        public static async Task<FirebaseUserInfo> LoginAsync(string username, string password, string k)
         {
             var cl = new HttpClient();
             var req = new StringContent(string.Format("{{\"email\":\"{0}\",\"password\":\"{1}\",\"returnSecureToken\":true}}", new object[2]
@@ -69,7 +69,7 @@ namespace Firebase.Database
             }), Encoding.UTF8, "application/json");
             var post = await cl.PostAsync(
                 new Uri(
-                    "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPassword?key=AIzaSyAZx9BvvTImtzY32Th0IrTWYIJVpyb1toY"),
+                    "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPassword?key=" + k),
                 req);
             var r = await post.Content.ReadAsStringAsync();
             return JsonConvert.DeserializeObject<FirebaseUserInfo>(r);
@@ -82,7 +82,7 @@ namespace Firebase.Database
 
     public class FirebaseResetPassword
     {
-        public static async Task<FirebaseResetPassword> ResetPasswordAsync(string email)
+        public static async Task<FirebaseResetPassword> ResetPasswordAsync(string email, string k)
         {
             var cl = new HttpClient();
             var req = new StringContent(string.Format("{{\"requestType\":\"{0}\",\"email\":\"{1}\",\"returnSecureToken\":true}}", new object[2]
@@ -92,7 +92,7 @@ namespace Firebase.Database
             }), Encoding.UTF8, "application/json");
             var post = await cl.PostAsync(
                 new Uri(
-                    "https://www.googleapis.com/identitytoolkit/v3/relyingparty/getOobConfirmationCode?key=AIzaSyAZx9BvvTImtzY32Th0IrTWYIJVpyb1toY"),
+                    "https://www.googleapis.com/identitytoolkit/v3/relyingparty/getOobConfirmationCode?key=" + k),
                 req);
             var r = await post.Content.ReadAsStringAsync();
             return JsonConvert.DeserializeObject<FirebaseResetPassword>(r);
@@ -105,7 +105,7 @@ namespace Firebase.Database
 
     public class FirebaseAddUser
     {
-        public static async Task<FirebaseAddUser> AddUserAsync(string user, string password)
+        public static async Task<FirebaseAddUser> AddUserAsync(string user, string password, string k)
         {
             var cl = new HttpClient();
             var req = new StringContent(string.Format("{{\"email\":\"{0}\",\"password\":\"{1}\",\"returnSecureToken\":true}}", new object[2]
@@ -115,7 +115,7 @@ namespace Firebase.Database
             }), Encoding.UTF8, "application/json");
             var post = await cl.PostAsync(
                 new Uri(
-                    "https://www.googleapis.com/identitytoolkit/v3/relyingparty/signupNewUser?key=AIzaSyAZx9BvvTImtzY32Th0IrTWYIJVpyb1toY"),
+                    "https://www.googleapis.com/identitytoolkit/v3/relyingparty/signupNewUser?key=" + k),
                 req);
             var r = await post.Content.ReadAsStringAsync();
             return JsonConvert.DeserializeObject<FirebaseAddUser>(r);
