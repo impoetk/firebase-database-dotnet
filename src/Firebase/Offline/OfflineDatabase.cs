@@ -1,11 +1,22 @@
-﻿namespace Firebase.Database.Offline
+﻿using System;
+using System.Reflection;
+
+public class FullNameAttribute : Attribute
+{
+    public FullNameAttribute(string fullName)
+    {
+        FullName = fullName;
+    }
+
+    public string FullName { get; }
+}
+namespace Firebase.Database.Offline
 {
     using System;
     using System.Collections;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
-
     using LiteDB;
 
     /// <summary>
@@ -21,9 +32,11 @@
         /// </summary>
         /// <param name="itemType"> The item type which is used to determine the database file name.  </param>
         /// <param name="filenameModifier"> Custom string which will get appended to the file name. </param>
-        public OfflineDatabase(Type itemType, string filenameModifier)
+        ///  <param name="passFactory"> Custom function to encrypt the database with a passowrd. </param>
+        /// <param name="locationFactory"> Custom function to put the database in a custom location. </param>
+        public OfflineDatabase(Type itemType, string filenameModifier, Func<string> passFactory, Func<DirectoryInfo> locationFactory)
         {
-            var fullName = this.GetFileName(itemType.ToString());
+            var fullName = this.GetFileName(itemType.GetCustomAttribute<FullNameAttribute>()?.FullName ?? itemType.ToString());
             if(fullName.Length > 100)
             {
                 fullName = fullName.Substring(0, 100);
@@ -32,9 +45,20 @@
             BsonMapper mapper = BsonMapper.Global;
             mapper.Entity<OfflineEntry>().Id(o => o.Key);
 
-            string root = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string root = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+            if (locationFactory != null)
+            {
+                var dir = locationFactory();
+                root = dir.FullName;
+                if (!dir.Exists)
+                    dir.Create();
+            }
             string filename = fullName + filenameModifier + ".db";
             var path = Path.Combine(root, filename);
+            if (passFactory != null)
+            {
+                path = $"filename={path}; password={passFactory()};";
+            }
             this.db = new LiteRepository(new LiteDatabase(path, mapper));
 
             this.cache = db.Database.GetCollection<OfflineEntry>().FindAll()
