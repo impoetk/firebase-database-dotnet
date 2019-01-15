@@ -1,4 +1,6 @@
-﻿namespace Firebase.Database.Offline
+﻿using System.Reflection;
+
+namespace Firebase.Database.Offline
 {
     using System;
     using System.Collections;
@@ -26,7 +28,7 @@
         /// <param name="locationFactory"> Custom function to put the database in a custom location. </param>
         public ConcurrentOfflineDatabase(Type itemType, string filenameModifier,Func<string> passFactory,Func<DirectoryInfo> locationFactory)
         {
-            var fullName = this.GetFileName(itemType.ToString());
+            var fullName = this.GetFileName(itemType.GetCustomAttribute<FullNameAttribute>()?.FullName ?? itemType.ToString());
             if(fullName.Length > 100)
             {
                 fullName = fullName.Substring(0, 100);
@@ -47,7 +49,7 @@
             var path = Path.Combine(root, filename);
             if (passFactory != null)
             {
-                path += " password=" + passFactory();
+                path = $"filename={path}; password={passFactory()};";
             }
             this.db = new LiteRepository(new LiteDatabase(path, mapper), true);
 

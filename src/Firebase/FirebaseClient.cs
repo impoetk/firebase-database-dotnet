@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net.Http;
 using System.Text;
 using Newtonsoft.Json;
@@ -57,6 +58,7 @@ namespace Firebase.Database
         }
     }
 
+    [FullName("57e527dca72248e1becfd80f591aa085")]
     public class FirebaseUserInfo
     {
         public static async Task<FirebaseUserInfo> LoginAsync(string username, string password, string k)
@@ -74,10 +76,56 @@ namespace Firebase.Database
             var r = await post.Content.ReadAsStringAsync();
             return JsonConvert.DeserializeObject<FirebaseUserInfo>(r);
         }
-        [JsonProperty("localId")]
-        public string LocalId { get; set; }
+        [JsonProperty("kind")]
+        public string Kind { get; set; }
+
         [JsonProperty("idToken")]
         public string FirebaseToken { get; set; }
+
+        [JsonProperty("email")]
+        public string Email { get; set; }
+
+        [JsonProperty("refreshToken")]
+        public string RefreshToken { get; set; }
+
+        [JsonProperty("expiresIn")]
+        public string ExpiresIn
+        {
+            get => _expiresIn;
+            set
+            {
+                _expiresIn = value;
+                if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var seconds))
+                {
+                    _expirationTime = DateTime.UtcNow + TimeSpan.FromSeconds(seconds - 10);
+                }
+            }
+        }
+
+        [JsonProperty("localId")]
+        public string LocalId { get; set; }
+
+        [JsonProperty("registered")]
+        public bool Registered { get; set; }
+
+        [JsonProperty("error")]
+        public FirebaseError FirebaseError = new FirebaseError();
+
+        private string _expiresIn;
+        private DateTime _expirationTime = DateTime.UtcNow;
+
+        public bool IsExpired()
+        {
+            return DateTime.UtcNow > _expirationTime;
+        }
+
+        public void FromRefreshToken(FirebaseRefreshToken refreshData)
+        {
+            FirebaseToken = refreshData.IdToken;
+            RefreshToken = refreshData.RefreshToken;
+            ExpiresIn = refreshData.ExpiresIn;
+
+        }
     }
 
     public class FirebaseResetPassword
@@ -85,7 +133,7 @@ namespace Firebase.Database
         public static async Task<FirebaseResetPassword> ResetPasswordAsync(string email, string k)
         {
             var cl = new HttpClient();
-            var req = new StringContent(string.Format("{{\"requestType\":\"{0}\",\"email\":\"{1}\",\"returnSecureToken\":true}}", new object[2]
+            var req = new StringContent(string.Format("{{\"requestType\":\"{0}\",\"email\":\"{1}\",\"returnSecureToken\":true}}", new object[]
             {
                 (object) "PASSWORD_RESET",
                 (object) email
@@ -102,13 +150,49 @@ namespace Firebase.Database
         [JsonProperty("kind")]
         public string Kind { get; set; }
     }
+    public class FirebaseRefreshToken
+    {
+        public static async Task<FirebaseRefreshToken> RefreshTokenAsync(string token, string k)
+        {
+            var cl = new HttpClient();
+            var req = new StringContent(string.Format("{{\"grant_type\":\"refresh_token\",\"refresh_token\":\"{0}\"}}", new object[]
+            {
+                (object) token,
+            }), Encoding.UTF8, "application/json");
+            var post = await cl.PostAsync(
+                new Uri(
+                    "https://securetoken.googleapis.com/v1/token?key=" + k),
+                req);
+            var r = await post.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<FirebaseRefreshToken>(r);
+        }
+        [JsonProperty("exipires_in")]
+        public string ExpiresIn { get; set; }
 
+        [JsonProperty("token_type")]
+        public string TokenType { get; set; }
+
+        [JsonProperty("refresh_token")]
+        public string RefreshToken { get; set; }
+
+        [JsonProperty("id_token")]
+        public string IdToken { get; set; }
+
+        [JsonProperty("user_id")]
+        public string UserId { get; set; }
+
+        [JsonProperty("project_id")]
+        public string ProjectId { get; set; }
+
+        [JsonProperty("error")]
+        public FirebaseError FirebaseError = new FirebaseError();
+    }
     public class FirebaseAddUser
     {
         public static async Task<FirebaseAddUser> AddUserAsync(string user, string password, string k)
         {
             var cl = new HttpClient();
-            var req = new StringContent(string.Format("{{\"email\":\"{0}\",\"password\":\"{1}\",\"returnSecureToken\":true}}", new object[2]
+            var req = new StringContent(string.Format("{{\"email\":\"{0}\",\"password\":\"{1}\",\"returnSecureToken\":true}}", new object[]
             {
                 (object) user,
                 (object) password
@@ -121,15 +205,40 @@ namespace Firebase.Database
             return JsonConvert.DeserializeObject<FirebaseAddUser>(r);
         }
 
+        [JsonProperty("kind")]
+        public string Kind { get; set; }
+
+        [JsonProperty("idToken")]
+        public string FirebaseToken { get; set; }
+
+        [JsonProperty("email")]
+        public string Email { get; set; }
+
+        [JsonProperty("refreshToken")]
+        public string RefreshToken { get; set; }
+
+        [JsonProperty("expiresIn")]
+        public string ExpiresIn { get; set; }
+
+        [JsonProperty("localId")]
+        public string LocalId { get; set; }
+
+        [JsonProperty("registered")]
+        public bool Registered { get; set; }
+
         [JsonProperty("error")]
         public FirebaseError FirebaseError = new FirebaseError();
-
-        [JsonProperty("localid")]
-        public string LocalId { get; set; }
     }
 
-    public class FirebaseError
+    public struct FirebaseError
     {
+        public static FirebaseError NoError = new FirebaseError()
+        {
+            _hasNoError = true
+        };
+
+        private bool _hasNoError;
+
         [JsonProperty("code")]
         public string ErrorCode { get; set; }
 
@@ -140,5 +249,32 @@ namespace Firebase.Database
         {
             return "Error " + ErrorCode + ": " + ErrorMessage;
         }
+
+        public override bool Equals(object obj)
+        {
+            return base.Equals(obj);
+        }
+
+        public bool Equals(FirebaseError other)
+        {
+            return _hasNoError == other._hasNoError;
+        }
+
+        public override int GetHashCode()
+        {
+            return _hasNoError.GetHashCode();
+        }
+
+        public static bool operator== (FirebaseError a, FirebaseError b)
+        {
+            return a._hasNoError == b._hasNoError;
+        }
+
+        public static bool operator !=(FirebaseError a, FirebaseError b)
+        {
+            return a._hasNoError != b._hasNoError;
+        }
     }
+
+
 }
