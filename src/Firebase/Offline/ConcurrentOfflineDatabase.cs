@@ -12,7 +12,7 @@
     /// <summary>
     /// The offline database.
     /// </summary>
-    public class ConcurrentOfflineDatabase : IDictionary<string, OfflineEntry>
+    public class ConcurrentOfflineDatabase : IDictionary<string, OfflineEntry>, IDisposable
     {
         private readonly LiteRepository db;
         private readonly ConcurrentDictionary<string, OfflineEntry> ccache;
@@ -49,7 +49,7 @@
             {
                 path += " password=" + passFactory();
             }
-            this.db = new LiteRepository(new LiteDatabase(path, mapper));
+            this.db = new LiteRepository(new LiteDatabase(path, mapper), true);
 
             var cache = db.Database
                 .GetCollection<OfflineEntry>()
@@ -215,6 +215,11 @@
             }
 
             return fileName;
+        }
+
+        public void Dispose()
+        {
+            db?.Dispose();
         }
     }
 }
