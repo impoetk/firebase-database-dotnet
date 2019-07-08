@@ -59,8 +59,8 @@
 
             this.PutHandler = setHandler ?? new SetHandler<T>();
 
-            this.isSyncRunning = true;
-            Task.Factory.StartNew(this.SynchronizeThread, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+            //this.isSyncRunning = true;
+            //Task.Factory.StartNew(this.SynchronizeThread, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
 
         /// <summary>
